@@ -33,7 +33,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public String login(String username, String password) {
+    public User createUser(String username, String password, String nickname, String role) {
+        User existingUser = findByUsername(username);
+        if (existingUser != null) {
+            throw new BusinessException(MessageConstant.ALREADY_EXIST);
+        }
+        User user = User.builder()
+                .username(username)
+                .password(password)
+                .nickname(nickname)
+                .role(role)
+                .build();
+        save(user);
+        return user;
+    }
+
+    @Override
+    public User login(String username, String password) {
         User exsitingUser = findByUsername(username);
         if (exsitingUser == null){
             throw new BusinessException(MessageConstant.ACCOUNT_NOT_FOUND);
@@ -41,7 +57,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (!exsitingUser.getPassword().equals(password)){
             throw new BusinessException(MessageConstant.PASSWORD_ERROR);
         }
-        return jwtUtil.generateToken(exsitingUser.getId());
+        return exsitingUser;
     }
 
     @Override

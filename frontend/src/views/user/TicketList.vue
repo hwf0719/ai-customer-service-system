@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ticketApi } from '../../api/ticket'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const loading = ref(false)
@@ -24,18 +24,18 @@ const statusOptions = [
   { value: 'CLOSED', label: '已关闭' }
 ]
 
-const statusTagType = {
-  PENDING: 'warning',
-  IN_PROGRESS: 'primary',
-  RESOLVED: 'success',
-  CLOSED: 'info'
-}
-
 const statusLabel = {
   PENDING: '待处理',
   IN_PROGRESS: '处理中',
   RESOLVED: '已解决',
   CLOSED: '已关闭'
+}
+
+const statusType = {
+  PENDING: 'warning',
+  IN_PROGRESS: 'primary',
+  RESOLVED: 'success',
+  CLOSED: 'info'
 }
 
 const priorityLabel = {
@@ -45,7 +45,7 @@ const priorityLabel = {
   URGENT: '紧急'
 }
 
-const priorityTagType = {
+const priorityType = {
   LOW: 'info',
   MEDIUM: '',
   HIGH: 'warning',
@@ -64,6 +64,7 @@ async function fetchTickets() {
     total.value = data.total || 0
   } catch (error) {
     console.error('获取工单列表失败:', error)
+    ElMessage.error('获取工单列表失败')
   } finally {
     loading.value = false
   }
@@ -93,28 +94,11 @@ function handleSizeChange(size) {
 }
 
 function handleCreate() {
-  router.push('/admin/tickets/create')
+  router.push('/user/tickets/create')
 }
 
 function handleView(id) {
-  router.push(`/admin/tickets/${id}`)
-}
-
-async function handleUpdateStatus(id, status) {
-  try {
-    await ElMessageBox.confirm('确定要更新工单状态吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await ticketApi.updateStatus(id, status)
-    ElMessage.success('状态更新成功')
-    fetchTickets()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('更新状态失败:', error)
-    }
-  }
+  router.push(`/user/tickets/${id}`)
 }
 
 function formatTime(time) {
@@ -124,11 +108,11 @@ function formatTime(time) {
 </script>
 
 <template>
-  <div class="ticket-list">
+  <div class="user-ticket-list">
     <div class="page-header">
-      <h2>工单管理</h2>
-      <el-button type="primary" icon="Plus" @click="handleCreate">
-        创建工单
+      <h2>我的工单</h2>
+      <el-button type="primary" icon="EditPen" @click="handleCreate">
+        提交工单
       </el-button>
     </div>
 
@@ -154,7 +138,7 @@ function formatTime(time) {
         <el-form-item label="关键词">
           <el-input
             v-model="queryParams.keyword"
-            placeholder="搜索标题/内容"
+            placeholder="搜索标题"
             clearable
             style="width: 200px"
             @keyup.enter="handleSearch"
@@ -181,7 +165,7 @@ function formatTime(time) {
         stripe
         style="width: 100%"
       >
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="id" label="工单号" width="80" />
 
         <el-table-column prop="title" label="标题" min-width="200">
           <template #default="{ row }">
@@ -193,7 +177,7 @@ function formatTime(time) {
 
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="statusTagType[row.status]">
+            <el-tag :type="statusType[row.status]">
               {{ statusLabel[row.status] }}
             </el-tag>
           </template>
@@ -201,52 +185,23 @@ function formatTime(time) {
 
         <el-table-column prop="priority" label="优先级" width="100">
           <template #default="{ row }">
-            <el-tag :type="priorityTagType[row.priority]">
+            <el-tag :type="priorityType[row.priority]">
               {{ priorityLabel[row.priority] }}
             </el-tag>
           </template>
         </el-table-column>
 
-        <el-table-column prop="category" label="分类" width="120" />
-
-        <el-table-column prop="createdAt" label="创建时间" width="180">
+        <el-table-column prop="createTime" label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatTime(row.createdAt) }}
+            {{ formatTime(row.createTime) }}
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="100" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="handleView(row.id)">
+            <el-button size="small" type="primary" @click="handleView(row.id)">
               查看
             </el-button>
-            <el-dropdown
-              v-if="row.status !== 'CLOSED'"
-              @command="(cmd) => handleUpdateStatus(row.id, cmd)"
-            >
-              <el-button size="small" type="primary">
-                更新状态
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item
-                    v-if="row.status === 'PENDING'"
-                    command="IN_PROGRESS"
-                  >
-                    开始处理
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="row.status === 'IN_PROGRESS'"
-                    command="RESOLVED"
-                  >
-                    标记已解决
-                  </el-dropdown-item>
-                  <el-dropdown-item command="CLOSED">
-                    关闭工单
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
           </template>
         </el-table-column>
       </el-table>
@@ -256,18 +211,22 @@ function formatTime(time) {
         class="pagination"
         :current-page="queryParams.page"
         :page-size="queryParams.pageSize"
-        :page-sizes="[10, 20, 50, 100]"
+        :page-sizes="[10, 20, 50]"
         :total="total"
-        layout="total, sizes, prev, pager, next, jumper"
+        layout="total, sizes, prev, pager, next"
         @current-change="handlePageChange"
         @size-change="handleSizeChange"
       />
+
+      <el-empty v-if="!loading && tickets.length === 0" description="暂无工单">
+        <el-button type="primary" @click="handleCreate">提交第一个工单</el-button>
+      </el-empty>
     </el-card>
   </div>
 </template>
 
 <style scoped>
-.ticket-list {
+.user-ticket-list {
   padding: 0;
 }
 

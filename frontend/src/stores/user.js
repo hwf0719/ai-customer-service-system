@@ -9,9 +9,14 @@ export const useUserStore = defineStore('user', () => {
   // 登录
   async function login(loginData) {
     const data = await userApi.login(loginData)
-    // 后端直接返回 token 字符串，不是对象
-    token.value = data
-    localStorage.setItem('token', data)
+    // 后端返回 { token, user } 对象
+    token.value = data.token
+    userInfo.value = data.user
+    localStorage.setItem('token', data.token)
+    // 缓存用户角色
+    if (data.user?.role) {
+      localStorage.setItem('userRole', data.user.role)
+    }
     return data
   }
 
@@ -32,6 +37,7 @@ export const useUserStore = defineStore('user', () => {
     token.value = ''
     userInfo.value = null
     localStorage.removeItem('token')
+    localStorage.removeItem('userRole')
   }
 
   return {

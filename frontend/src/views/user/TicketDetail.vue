@@ -2,31 +2,29 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ticketApi } from '../../api/ticket'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const ticket = ref(null)
-const summary = ref('')
-const summaryLoading = ref(false)
 const messages = ref([])
 const messageContent = ref('')
 const messageLoading = ref(false)
 const messagesContainer = ref(null)
-
-const statusTagType = {
-  PENDING: 'warning',
-  IN_PROGRESS: 'primary',
-  RESOLVED: 'success',
-  CLOSED: 'info'
-}
 
 const statusLabel = {
   PENDING: '待处理',
   IN_PROGRESS: '处理中',
   RESOLVED: '已解决',
   CLOSED: '已关闭'
+}
+
+const statusType = {
+  PENDING: 'warning',
+  IN_PROGRESS: 'primary',
+  RESOLVED: 'success',
+  CLOSED: 'info'
 }
 
 const priorityLabel = {
@@ -36,7 +34,7 @@ const priorityLabel = {
   URGENT: '紧急'
 }
 
-const priorityTagType = {
+const priorityType = {
   LOW: 'info',
   MEDIUM: '',
   HIGH: 'warning',
@@ -49,6 +47,18 @@ const categoryLabel = {
   PRODUCT: '产品问题',
   TECHNICAL: '技术问题',
   OTHER: '其他'
+}
+
+const senderTypeLabel = {
+  USER: '我',
+  AGENT: '客服',
+  AI: 'AI 助手'
+}
+
+const senderTypeTag = {
+  USER: 'success',
+  AGENT: 'warning',
+  AI: 'primary'
 }
 
 onMounted(() => {
@@ -69,42 +79,11 @@ async function fetchTicketDetail() {
   }
 }
 
-async function handleUpdateStatus(status) {
-  try {
-    await ElMessageBox.confirm('确定要更新工单状态吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await ticketApi.updateStatus(ticket.value.id, status)
-    ElMessage.success('状态更新成功')
-    fetchTicketDetail()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('更新状态失败:', error)
-    }
-  }
-}
-
-async function handleGetSummary() {
-  summaryLoading.value = true
-  try {
-    const data = await ticketApi.getSummary(ticket.value.id)
-    summary.value = data.summary || '暂无摘要'
-  } catch (error) {
-    console.error('获取摘要失败:', error)
-    ElMessage.error('获取摘要失败')
-  } finally {
-    summaryLoading.value = false
-  }
-}
-
 async function fetchMessages() {
   try {
     const id = route.params.id
     const data = await ticketApi.getMessages(id)
     messages.value = data || []
-    // 滚动到底部
     await nextTick()
     scrollToBottom()
   } catch (error) {
@@ -112,7 +91,7 @@ async function fetchMessages() {
   }
 }
 
-async function handleSendMessage(senderType = 'USER') {
+async function handleSendMessage() {
   if (!messageContent.value.trim()) {
     ElMessage.warning('请输入消息内容')
     return
@@ -121,7 +100,7 @@ async function handleSendMessage(senderType = 'USER') {
   messageLoading.value = true
   try {
     const id = route.params.id
-    await ticketApi.sendMessage(id, messageContent.value.trim(), senderType)
+    await ticketApi.sendMessage(id, messageContent.value.trim(), 'USER')
     messageContent.value = ''
     ElMessage.success('发送成功')
     await fetchMessages()
@@ -142,8 +121,7 @@ function scrollToBottom() {
 function handleKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
-    // 管理端发送消息默认是 AGENT 类型
-    handleSendMessage('AGENT')
+    handleSendMessage()
   }
 }
 
@@ -153,12 +131,12 @@ function formatTime(time) {
 }
 
 function handleBack() {
-  router.back()
+  router.push('/user/tickets')
 }
 </script>
 
 <template>
-  <div class="ticket-detail" v-loading="loading">
+  <div class="user-ticket-detail" v-loading="loading">
     <div class="page-header">
       <el-button icon="ArrowLeft" @click="handleBack">返回</el-button>
       <h2>工单详情</h2>
@@ -172,60 +150,32 @@ function handleBack() {
             <template #header>
               <div class="card-header">
                 <span>工单信息</span>
-                <div class="header-actions">
-                  <el-button
-                    v-if="ticket.status === 'PENDING'"
-                    type="primary"
-                    size="small"
-                    @click="handleUpdateStatus('IN_PROGRESS')"
-                  >
-                    开始处理
-                  </el-button>
-                  <el-button
-                    v-if="ticket.status === 'IN_PROGRESS'"
-                    type="success"
-                    size="small"
-                    @click="handleUpdateStatus('RESOLVED')"
-                  >
-                    标记已解决
-                  </el-button>
-                  <el-button
-                    v-if="ticket.status !== 'CLOSED'"
-                    type="danger"
-                    size="small"
-                    @click="handleUpdateStatus('CLOSED')"
-                  >
-                    关闭工单
-                  </el-button>
-                </div>
+                <el-tag :type="statusType[ticket.status]" size="large">
+                  {{ statusLabel[ticket.status] }}
+                </el-tag>
               </div>
             </template>
 
             <el-descriptions :column="2" border>
-              <el-descriptions-item label="工单ID">
-                {{ ticket.id }}
-              </el-descriptions-item>
-              <el-descriptions-item label="状态">
-                <el-tag :type="statusTagType[ticket.status]">
-                  {{ statusLabel[ticket.status] }}
-                </el-tag>
+              <el-descriptions-item label="工单号">
+                #{{ ticket.id }}
               </el-descriptions-item>
               <el-descriptions-item label="优先级">
-                <el-tag :type="priorityTagType[ticket.priority]">
+                <el-tag :type="priorityType[ticket.priority]">
                   {{ priorityLabel[ticket.priority] }}
                 </el-tag>
               </el-descriptions-item>
-              <el-descriptions-item label="分类">
+              <el-descriptions-item label="问题分类">
                 {{ categoryLabel[ticket.category] || ticket.category }}
               </el-descriptions-item>
-              <el-descriptions-item label="创建时间" :span="2">
-                {{ formatTime(ticket.createdAt) }}
+              <el-descriptions-item label="提交时间">
+                {{ formatTime(ticket.createTime) }}
               </el-descriptions-item>
               <el-descriptions-item label="标题" :span="2">
                 {{ ticket.title }}
               </el-descriptions-item>
-              <el-descriptions-item label="内容" :span="2">
-                <div class="content-text">{{ ticket.content }}</div>
+              <el-descriptions-item label="问题描述" :span="2">
+                <div class="content-text">{{ ticket.description }}</div>
               </el-descriptions-item>
             </el-descriptions>
           </el-card>
@@ -249,16 +199,13 @@ function handleBack() {
                 :key="msg.id"
                 class="message-item"
                 :class="{
-                  'message-ai': msg.senderType === 'AI',
-                  'message-user': msg.senderType === 'USER'
+                  'message-mine': msg.senderType === 'USER',
+                  'message-other': msg.senderType !== 'USER'
                 }"
               >
                 <div class="message-header">
-                  <el-tag
-                    :type="msg.senderType === 'AI' ? 'primary' : msg.senderType === 'USER' ? 'success' : 'warning'"
-                    size="small"
-                  >
-                    {{ msg.senderType === 'AI' ? 'AI 助手' : msg.senderType === 'USER' ? '用户' : '客服' }}
+                  <el-tag :type="senderTypeTag[msg.senderType]" size="small">
+                    {{ senderTypeLabel[msg.senderType] }}
                   </el-tag>
                   <span class="message-time">{{ formatTime(msg.createTime) }}</span>
                 </div>
@@ -280,66 +227,55 @@ function handleBack() {
               <el-button
                 type="primary"
                 :loading="messageLoading"
-                @click="handleSendMessage('AGENT')"
+                @click="handleSendMessage"
                 class="send-btn"
               >
                 发送
               </el-button>
+            </div>
+            <div v-else class="closed-tip">
+              <el-alert title="该工单已关闭，无法发送消息" type="info" show-icon :closable="false" />
             </div>
           </el-card>
         </el-col>
 
         <!-- 侧边栏 -->
         <el-col :span="8">
-          <!-- AI 摘要 -->
-          <el-card shadow="never" class="summary-card">
+          <!-- 状态说明 -->
+          <el-card shadow="never" class="status-card">
             <template #header>
-              <div class="card-header">
-                <span>AI 摘要</span>
-                <el-button
-                  type="primary"
-                  size="small"
-                  :loading="summaryLoading"
-                  @click="handleGetSummary"
-                >
-                  生成摘要
-                </el-button>
-              </div>
+              <span>状态说明</span>
             </template>
-            <div v-if="summary" class="summary-content">{{ summary }}</div>
-            <el-empty v-else description="点击按钮生成 AI 摘要" :image-size="60" />
+            <div class="status-desc">
+              <div class="status-item">
+                <el-tag type="warning">待处理</el-tag>
+                <span>工单已提交，等待处理</span>
+              </div>
+              <div class="status-item">
+                <el-tag type="primary">处理中</el-tag>
+                <span>客服正在处理您的问题</span>
+              </div>
+              <div class="status-item">
+                <el-tag type="success">已解决</el-tag>
+                <span>问题已解决</span>
+              </div>
+              <div class="status-item">
+                <el-tag type="info">已关闭</el-tag>
+                <span>工单已关闭</span>
+              </div>
+            </div>
           </el-card>
 
-          <!-- 工单状态流转 -->
-          <el-card shadow="never" class="timeline-card">
+          <!-- 帮助提示 -->
+          <el-card shadow="never" class="help-card">
             <template #header>
-              <span>状态流转</span>
+              <span>需要帮助？</span>
             </template>
-            <el-timeline>
-              <el-timeline-item
-                timestamp="创建工单"
-                placement="top"
-                type="primary"
-              >
-                <p>{{ formatTime(ticket.createdAt) }}</p>
-              </el-timeline-item>
-              <el-timeline-item
-                v-if="ticket.status !== 'PENDING'"
-                timestamp="开始处理"
-                placement="top"
-                type="success"
-              >
-                <p>{{ formatTime(ticket.updatedAt) }}</p>
-              </el-timeline-item>
-              <el-timeline-item
-                v-if="ticket.status === 'RESOLVED' || ticket.status === 'CLOSED'"
-                timestamp="已解决"
-                placement="top"
-                type="success"
-              >
-                <p>{{ formatTime(ticket.updatedAt) }}</p>
-              </el-timeline-item>
-            </el-timeline>
+            <div class="help-content">
+              <p>如果您遇到紧急问题，可以通过以下方式联系我们：</p>
+              <p><el-icon><Phone /></el-icon> 客服电话：400-xxx-xxxx</p>
+              <p><el-icon><Message /></el-icon> 邮箱：support@example.com</p>
+            </div>
           </el-card>
         </el-col>
       </el-row>
@@ -348,7 +284,7 @@ function handleBack() {
 </template>
 
 <style scoped>
-.ticket-detail {
+.user-ticket-detail {
   padding: 0;
 }
 
@@ -380,19 +316,24 @@ function handleBack() {
 }
 
 .messages-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .message-item {
   padding: 12px;
-  background: #f5f7fa;
+  margin-bottom: 12px;
   border-radius: 8px;
 }
 
-.message-item.message-ai {
+.message-mine {
   background: #ecf5ff;
+  margin-left: 40px;
+}
+
+.message-other {
+  background: #f5f7fa;
+  margin-right: 40px;
 }
 
 .message-header {
@@ -411,26 +352,7 @@ function handleBack() {
   font-size: 14px;
   line-height: 1.6;
   color: #333;
-}
-
-.summary-card {
-  margin-bottom: 20px;
-}
-
-.summary-content {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #333;
-  white-space: pre-wrap;
-}
-
-.timeline-card {
-  margin-bottom: 20px;
-}
-
-.messages-list {
-  max-height: 400px;
-  overflow-y: auto;
+  word-break: break-word;
 }
 
 .message-input {
@@ -442,5 +364,43 @@ function handleBack() {
 .send-btn {
   margin-top: 8px;
   float: right;
+}
+
+.closed-tip {
+  margin-top: 16px;
+}
+
+.status-card {
+  margin-bottom: 20px;
+}
+
+.status-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-item span {
+  font-size: 13px;
+  color: #666;
+}
+
+.help-card {
+  margin-bottom: 20px;
+}
+
+.help-content p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 13px;
+  color: #666;
 }
 </style>

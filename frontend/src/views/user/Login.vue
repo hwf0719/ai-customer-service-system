@@ -29,9 +29,18 @@ async function handleLogin() {
   try {
     await formRef.value.validate()
     loading.value = true
-    await userStore.login(form)
+    const data = await userStore.login(form)
     ElMessage.success('登录成功')
-    router.push('/')
+
+    // 根据角色跳转到不同页面
+    const role = data.user?.role
+    if (role === 'ADMIN' || role === 'AGENT') {
+      // 管理员或客服跳转到管理端
+      router.push('/admin')
+    } else {
+      // 普通用户跳转到用户端
+      router.push('/user')
+    }
   } catch (error) {
     if (error !== false) {
       console.error('登录失败:', error)

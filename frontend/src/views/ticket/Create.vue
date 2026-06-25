@@ -52,7 +52,7 @@ async function handleSubmit() {
     loading.value = true
     await ticketApi.create(form)
     ElMessage.success('工单创建成功')
-    router.push('/tickets')
+    router.push('/admin/tickets')
   } catch (error) {
     if (error !== false) {
       console.error('创建工单失败:', error)

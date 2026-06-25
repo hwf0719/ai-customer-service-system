@@ -3,8 +3,11 @@ package com.example.aics.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.aics.dto.page.TicketPageQueryDTO;
 import com.example.aics.entity.Ticket;
+import com.example.aics.entity.TicketMessage;
 import com.example.aics.vo.page.PageResultVO;
 import com.example.aics.vo.ticket.TicketVO;
+
+import java.util.List;
 
 public interface TicketService extends IService<Ticket> {
 
@@ -28,5 +31,18 @@ public interface TicketService extends IService<Ticket> {
      */
     String generateSummary(Long ticketId);
 
-    PageResultVO<TicketVO> queryPage(TicketPageQueryDTO dto);
+    /**
+     * 发送消息
+     */
+    TicketMessage sendMessage(Long ticketId, Long senderId, String senderType, String content);
+
+    /**
+     * 获取工单消息列表
+     */
+    List<TicketMessage> getMessages(Long ticketId);
+
+    /**
+     * 分页查询工单（管理员查看所有，用户只看自己的）
+     */
+    PageResultVO<TicketVO> queryPage(TicketPageQueryDTO dto, Long userId, String role);
 }

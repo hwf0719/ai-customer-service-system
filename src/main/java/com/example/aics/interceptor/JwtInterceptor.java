@@ -34,9 +34,11 @@ public class JwtInterceptor implements HandlerInterceptor {
         }
 
         try{
-            Long userId=jwtUtil.parseToken(token);
-            log.info("userId: {}", userId);
+            Long userId = jwtUtil.parseToken(token);
+            String role = jwtUtil.getRoleFromToken(token);
+            log.info("userId: {}, role: {}", userId, role);
             BaseContext.setCurrentId(userId);
+            BaseContext.setCurrentRole(role);
             return true;
         }catch (Exception e){
             log.error("token解析失败", e);
@@ -47,6 +49,6 @@ public class JwtInterceptor implements HandlerInterceptor {
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         // 清除ThreadLocal
-        BaseContext.removeCurrentId();
+        BaseContext.remove();
     }
 }

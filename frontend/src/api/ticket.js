@@ -24,5 +24,15 @@ export const ticketApi = {
   // 获取工单摘要
   getSummary(id) {
     return request.get(`/ticket/${id}/summary`)
+  },
+
+  // 发送消息
+  sendMessage(id, content, senderType = 'USER') {
+    return request.post(`/ticket/${id}/messages`, { content, senderType })
+  },
+
+  // 获取消息列表
+  getMessages(id) {
+    return request.get(`/ticket/${id}/messages`)
   }
 }

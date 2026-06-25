@@ -7,12 +7,12 @@ const router = useRouter()
 const userStore = useUserStore()
 const isCollapse = ref(false)
 
-// 管理端菜单
+// 用户端菜单
 const menuItems = [
-  { index: '/admin/dashboard', title: '控制台', icon: 'DataBoard' },
-  { index: '/admin/tickets', title: '工单管理', icon: 'Ticket' },
-  { index: '/admin/knowledge', title: '知识库', icon: 'Collection' },
-  { index: '/admin/users', title: '用户管理', icon: 'User' }
+  { index: '/user/dashboard', title: '我的主页', icon: 'HomeFilled' },
+  { index: '/user/tickets', title: '我的工单', icon: 'Ticket' },
+  { index: '/user/tickets/create', title: '提交工单', icon: 'EditPen' },
+  { index: '/user/profile', title: '个人中心', icon: 'User' }
 ]
 
 onMounted(async () => {
@@ -28,7 +28,7 @@ function handleCommand(command) {
     userStore.logout()
     router.push('/login')
   } else if (command === 'profile') {
-    router.push('/admin/profile')
+    router.push('/user/profile')
   }
 }
 </script>
@@ -39,16 +39,16 @@ function handleCommand(command) {
     <el-aside :width="isCollapse ? '64px' : '200px'" class="aside">
       <div class="logo">
         <img src="../../assets/vue.svg" alt="logo" class="logo-img" />
-        <span v-show="!isCollapse" class="logo-text">AI 客服系统</span>
+        <span v-show="!isCollapse" class="logo-text">AI 客服</span>
       </div>
 
       <el-menu
         :default-active="router.currentRoute.value.path"
         :collapse="isCollapse"
         router
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409eff"
+        background-color="#409EFF"
+        text-color="#fff"
+        active-text-color="#ffd04b"
       >
         <el-menu-item
           v-for="item in menuItems"
@@ -73,7 +73,7 @@ function handleCommand(command) {
             <component :is="isCollapse ? 'Expand' : 'Fold'" />
           </el-icon>
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/user/dashboard' }">首页</el-breadcrumb-item>
             <el-breadcrumb-item>{{ router.currentRoute.value.meta.title }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
@@ -108,7 +108,7 @@ function handleCommand(command) {
 }
 
 .aside {
-  background-color: #304156;
+  background-color: #409EFF;
   transition: width 0.3s;
   overflow: hidden;
 }
@@ -119,7 +119,7 @@ function handleCommand(command) {
   align-items: center;
   justify-content: center;
   padding: 0 16px;
-  background-color: #263445;
+  background-color: #337ecc;
 }
 
 .logo-img {
