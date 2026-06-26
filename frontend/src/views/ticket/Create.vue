@@ -11,7 +11,6 @@ const formRef = ref(null)
 const form = reactive({
   title: '',
   content: '',
-  category: '',
   priority: 'MEDIUM'
 })
 
@@ -23,21 +22,10 @@ const rules = {
   content: [
     { required: true, message: '请输入工单内容', trigger: 'blur' }
   ],
-  category: [
-    { required: true, message: '请选择分类', trigger: 'change' }
-  ],
   priority: [
     { required: true, message: '请选择优先级', trigger: 'change' }
   ]
 }
-
-const categoryOptions = [
-  { value: 'ACCOUNT', label: '账户问题' },
-  { value: 'PAYMENT', label: '支付问题' },
-  { value: 'PRODUCT', label: '产品问题' },
-  { value: 'TECHNICAL', label: '技术问题' },
-  { value: 'OTHER', label: '其他' }
-]
 
 const priorityOptions = [
   { value: 'LOW', label: '低' },
@@ -90,21 +78,6 @@ function handleCancel() {
           />
         </el-form-item>
 
-        <el-form-item label="分类" prop="category">
-          <el-select
-            v-model="form.category"
-            placeholder="请选择分类"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="item in categoryOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-
         <el-form-item label="优先级" prop="priority">
           <el-select
             v-model="form.priority"
@@ -127,6 +100,13 @@ function handleCancel() {
             :rows="6"
             placeholder="请详细描述您的问题..."
           />
+        </el-form-item>
+
+        <el-form-item>
+          <div class="ai-tip">
+            <el-icon><InfoFilled /></el-icon>
+            <span>提交后 AI 将自动分析工单分类和情绪</span>
+          </div>
         </el-form-item>
 
         <el-form-item>
@@ -154,5 +134,17 @@ function handleCancel() {
 .page-header h2 {
   margin: 0;
   color: #333;
+}
+
+.ai-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.ai-tip .el-icon {
+  color: #409eff;
 }
 </style>

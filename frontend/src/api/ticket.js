@@ -34,5 +34,10 @@ export const ticketApi = {
   // 获取消息列表
   getMessages(id) {
     return request.get(`/ticket/${id}/messages`)
+  },
+
+  // 获取统计数据
+  getStats() {
+    return request.get('/dashboard/stats')
   }
 }

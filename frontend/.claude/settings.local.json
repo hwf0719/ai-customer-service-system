@@ -6,7 +6,16 @@
       "Bash(git remote *)",
       "Bash(git branch *)",
       "Bash(git push *)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(git commit -m 'feat: 添加用户端页面和角色权限系统 *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'feat: AI智能客服Python AI服务 *)",
+      "Bash(mkdir -p python-ai-service)",
+      "Bash(cp -r \"C:\\\\Users\\\\28113\\\\PycharmProjects\\\\PythonProject2\\\\main.py\" python-ai-service/)",
+      "Bash(cp -r \"C:\\\\Users\\\\28113\\\\PycharmProjects\\\\PythonProject2\\\\agent.py\" python-ai-service/)",
+      "Bash(cp -r \"C:\\\\Users\\\\28113\\\\PycharmProjects\\\\PythonProject2\\\\ai_service.py\" python-ai-service/)",
+      "Bash(cp -r \"C:\\\\Users\\\\28113\\\\PycharmProjects\\\\PythonProject2\\\\rag.py\" python-ai-service/)",
+      "Bash(git commit -m 'feat: 接入Python AI服务 + 统计接口 + 前端优化 *)"
     ]
   }
 }

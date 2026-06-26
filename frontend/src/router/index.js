@@ -118,6 +118,8 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
   const userRole = localStorage.getItem('userRole')
 
+  console.log('路由守卫执行:', { to: to.path, token: !!token, userRole })
+
   // 未登录跳转到登录页
   if (to.meta.requiresAuth !== false && !token) {
     next('/login')
@@ -134,8 +136,31 @@ router.beforeEach((to, from, next) => {
     return
   }
 
+  // 根路径根据角色重定向
+  if (to.path === '/') {
+    const role = userRole?.toUpperCase()
+    if (token && (role === 'ADMIN' || role === 'AGENT')) {
+      next('/admin')
+    } else if (token) {
+      next('/user')
+    } else {
+      next('/login')
+    }
+    return
+  }
+
+  // ADMIN/AGENT 访问 /user 路径时重定向到 /admin
+  if (to.path.startsWith('/user')) {
+    const role = userRole?.toUpperCase()
+    if (token && (role === 'ADMIN' || role === 'AGENT')) {
+      next('/admin')
+      return
+    }
+  }
+
   // 角色权限检查
-  if (to.path.startsWith('/admin') && userRole !== 'ADMIN' && userRole !== 'AGENT') {
+  const role = userRole?.toUpperCase()
+  if (to.path.startsWith('/admin') && role !== 'ADMIN' && role !== 'AGENT') {
     next('/user')
     return
   }

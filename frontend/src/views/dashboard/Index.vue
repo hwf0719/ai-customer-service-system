@@ -1,19 +1,30 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import * as echarts from 'echarts'
+import { ticketApi } from '../../api/ticket'
 
 const stats = ref({
-  totalTickets: 156,
-  pendingTickets: 23,
-  resolvedTickets: 128,
-  avgResponseTime: '2.5h'
+  totalTickets: 0,
+  pendingTickets: 0,
+  resolvedTickets: 0,
+  avgResponseTime: '0h'
 })
 
 const chartRef = ref(null)
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchStats()
   initChart()
 })
+
+async function fetchStats() {
+  try {
+    const data = await ticketApi.getStats()
+    stats.value = data
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+  }
+}
 
 function initChart() {
   const chart = echarts.init(chartRef.value)

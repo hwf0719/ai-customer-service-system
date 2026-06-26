@@ -44,11 +44,29 @@ const priorityTagType = {
 }
 
 const categoryLabel = {
-  ACCOUNT: '账户问题',
-  PAYMENT: '支付问题',
-  PRODUCT: '产品问题',
   TECHNICAL: '技术问题',
+  BILLING: '账单问题',
+  GENERAL: '一般咨询',
   OTHER: '其他'
+}
+
+const categoryType = {
+  TECHNICAL: 'danger',
+  BILLING: 'warning',
+  GENERAL: 'info',
+  OTHER: ''
+}
+
+const sentimentLabel = {
+  POSITIVE: '😊 正面',
+  NEUTRAL: '😐 中性',
+  NEGATIVE: '😠 负面'
+}
+
+const sentimentType = {
+  POSITIVE: 'success',
+  NEUTRAL: 'info',
+  NEGATIVE: 'danger'
 }
 
 onMounted(() => {
@@ -90,7 +108,9 @@ async function handleGetSummary() {
   summaryLoading.value = true
   try {
     const data = await ticketApi.getSummary(ticket.value.id)
-    summary.value = data.summary || '暂无摘要'
+    const summaryText = data || '暂无摘要'  // 直接使用返回的字符串
+    summary.value = summaryText
+    ticket.value.summary = summaryText  // 同时更新 ticket 对象
   } catch (error) {
     console.error('获取摘要失败:', error)
     ElMessage.error('获取摘要失败')
@@ -216,16 +236,23 @@ function handleBack() {
                 </el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="分类">
-                {{ categoryLabel[ticket.category] || ticket.category }}
+                <el-tag :type="ticket.category ? categoryType[ticket.category] || 'info' : 'info'">
+                  {{ ticket.category ? categoryLabel[ticket.category] || ticket.category : '未分类' }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="情绪分析">
+                <el-tag :type="ticket.sentiment ? sentimentType[ticket.sentiment] || 'info' : 'info'">
+                  {{ ticket.sentiment ? sentimentLabel[ticket.sentiment] || '未知' : '未知' }}
+                </el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="创建时间" :span="2">
-                {{ formatTime(ticket.createdAt) }}
+                {{ formatTime(ticket.createTime) }}
               </el-descriptions-item>
               <el-descriptions-item label="标题" :span="2">
                 {{ ticket.title }}
               </el-descriptions-item>
               <el-descriptions-item label="内容" :span="2">
-                <div class="content-text">{{ ticket.content }}</div>
+                <div class="content-text">{{ ticket.description }}</div>
               </el-descriptions-item>
             </el-descriptions>
           </el-card>
@@ -306,7 +333,14 @@ function handleBack() {
                 </el-button>
               </div>
             </template>
-            <div v-if="summary" class="summary-content">{{ summary }}</div>
+            <div v-if="ticket.summary" class="summary-content">
+              <div class="ai-badge">🤖 AI 生成</div>
+              {{ ticket.summary }}
+            </div>
+            <div v-else-if="summary" class="summary-content">
+              <div class="ai-badge">🤖 AI 生成</div>
+              {{ summary }}
+            </div>
             <el-empty v-else description="点击按钮生成 AI 摘要" :image-size="60" />
           </el-card>
 
@@ -321,7 +355,7 @@ function handleBack() {
                 placement="top"
                 type="primary"
               >
-                <p>{{ formatTime(ticket.createdAt) }}</p>
+                <p>{{ formatTime(ticket.createTime) }}</p>
               </el-timeline-item>
               <el-timeline-item
                 v-if="ticket.status !== 'PENDING'"
@@ -329,7 +363,7 @@ function handleBack() {
                 placement="top"
                 type="success"
               >
-                <p>{{ formatTime(ticket.updatedAt) }}</p>
+                <p>{{ formatTime(ticket.updateTime) }}</p>
               </el-timeline-item>
               <el-timeline-item
                 v-if="ticket.status === 'RESOLVED' || ticket.status === 'CLOSED'"
@@ -337,7 +371,7 @@ function handleBack() {
                 placement="top"
                 type="success"
               >
-                <p>{{ formatTime(ticket.updatedAt) }}</p>
+                <p>{{ formatTime(ticket.updateTime) }}</p>
               </el-timeline-item>
             </el-timeline>
           </el-card>
@@ -422,6 +456,16 @@ function handleBack() {
   line-height: 1.6;
   color: #333;
   white-space: pre-wrap;
+}
+
+.ai-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-bottom: 8px;
 }
 
 .timeline-card {

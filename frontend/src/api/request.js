@@ -4,7 +4,7 @@ import router from '../router'
 
 const request = axios.create({
   baseURL: '/api',
-  timeout: 10000
+  timeout: 60000  // 60秒，AI 调用需要时间
 })
 
 // 请求拦截器

@@ -52,6 +52,32 @@ const priorityTagType = {
   URGENT: 'danger'
 }
 
+const categoryLabel = {
+  TECHNICAL: '技术问题',
+  BILLING: '账单问题',
+  GENERAL: '一般咨询',
+  OTHER: '其他'
+}
+
+const categoryType = {
+  TECHNICAL: 'danger',
+  BILLING: 'warning',
+  GENERAL: 'info',
+  OTHER: ''
+}
+
+const sentimentLabel = {
+  POSITIVE: '😊',
+  NEUTRAL: '😐',
+  NEGATIVE: '😠'
+}
+
+const sentimentType = {
+  POSITIVE: 'success',
+  NEUTRAL: 'info',
+  NEGATIVE: 'danger'
+}
+
 onMounted(() => {
   fetchTickets()
 })
@@ -207,11 +233,25 @@ function formatTime(time) {
           </template>
         </el-table-column>
 
-        <el-table-column prop="category" label="分类" width="120" />
-
-        <el-table-column prop="createdAt" label="创建时间" width="180">
+        <el-table-column prop="category" label="分类" width="120">
           <template #default="{ row }">
-            {{ formatTime(row.createdAt) }}
+            <el-tag :type="row.category ? categoryType[row.category] || 'info' : 'info'" size="small">
+              {{ row.category ? categoryLabel[row.category] || row.category : '未分类' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="sentiment" label="情绪" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.sentiment ? sentimentType[row.sentiment] || 'info' : 'info'" size="small">
+              {{ row.sentiment ? sentimentLabel[row.sentiment] || '?' : '?' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="createTime" label="创建时间" width="180">
+          <template #default="{ row }">
+            {{ formatTime(row.createTime) }}
           </template>
         </el-table-column>
 

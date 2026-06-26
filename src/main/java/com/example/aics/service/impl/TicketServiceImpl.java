@@ -13,6 +13,7 @@ import com.example.aics.exception.BusinessException;
 import com.example.aics.entity.TicketMessage;
 import com.example.aics.mapper.TicketMapper;
 import com.example.aics.mapper.TicketMessageMapper;
+import com.example.aics.service.AiService;
 import com.example.aics.service.TicketService;
 import com.example.aics.utils.TicketConverter;
 import com.example.aics.vo.page.PageResultVO;
@@ -20,24 +21,35 @@ import com.example.aics.vo.ticket.TicketVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TicketServiceImpl extends ServiceImpl<TicketMapper, Ticket> implements TicketService {
 
     @Autowired
     private TicketMessageMapper ticketMessageMapper;
+    @Autowired
+    private AiService aiService;
 
     @Override
     public Ticket createTicket(Long userId, String title, String description) {
+        String category = aiService.classify(title, description);
+        String sentiment = aiService.sentiment(description);
         Ticket ticket=Ticket.builder()
                 .userId(userId)
                 .title(title)
                 .description(description)
                 .status(TicketStatus.PENDING.name())
                 .priority(Priority.MEDIUM.name())
-                .category("GENERAL")
+                .category(category)
+                .sentiment(sentiment)
                 .build();
+        if ("NEGATIVE".equals(sentiment)) {
+            ticket.setPriority(Priority.HIGH.name());
+        }
         save(ticket);
         return ticket;
     }
@@ -65,7 +77,21 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, Ticket> impleme
 
     @Override
     public String generateSummary(Long ticketId) {
-        return "AI生成的摘要";
+        List<TicketMessage> ticketMessages=getMessages(ticketId);
+
+        List<Map<String,String>> messages=new ArrayList<>();
+        for (TicketMessage tm:ticketMessages){
+            Map<String,String> msg=new HashMap<>();
+            msg.put("role", tm.getSenderType().toLowerCase());
+            msg.put("content", tm.getContent());
+            messages.add(msg);
+        }
+        String summary=aiService.summary(messages);
+        Ticket ticket=getById(ticketId);
+        ticket.setSummary(summary);
+        updateById(ticket);
+        return summary;
+
     }
 
     @Override
@@ -128,4 +154,5 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, Ticket> impleme
         pageResult.setPageSize(dto.getPageSize());
         return pageResult;
     }
+
 }

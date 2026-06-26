@@ -32,6 +32,8 @@ public class TicketConverter {
         vo.setSummary(ticket.getSummary());
         vo.setUserId(ticket.getUserId());
         vo.setAgentId(ticket.getAgentId());
+        vo.setCreateTime(ticket.getCreateTime());
+        vo.setUpdateTime(ticket.getUpdateTime());
         return vo;
     }
 
