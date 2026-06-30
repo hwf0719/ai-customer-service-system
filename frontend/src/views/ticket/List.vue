@@ -19,21 +19,21 @@ const queryParams = reactive({
 const statusOptions = [
   { value: '', label: '全部' },
   { value: 'PENDING', label: '待处理' },
-  { value: 'IN_PROGRESS', label: '处理中' },
+  { value: 'PROCESSING', label: '处理中' },
   { value: 'RESOLVED', label: '已解决' },
   { value: 'CLOSED', label: '已关闭' }
 ]
 
 const statusTagType = {
   PENDING: 'warning',
-  IN_PROGRESS: 'primary',
+  PROCESSING: 'primary',
   RESOLVED: 'success',
   CLOSED: 'info'
 }
 
 const statusLabel = {
   PENDING: '待处理',
-  IN_PROGRESS: '处理中',
+  PROCESSING: '处理中',
   RESOLVED: '已解决',
   CLOSED: '已关闭'
 }
@@ -271,12 +271,12 @@ function formatTime(time) {
                 <el-dropdown-menu>
                   <el-dropdown-item
                     v-if="row.status === 'PENDING'"
-                    command="IN_PROGRESS"
+                    command="PROCESSING"
                   >
                     开始处理
                   </el-dropdown-item>
                   <el-dropdown-item
-                    v-if="row.status === 'IN_PROGRESS'"
+                    v-if="row.status === 'PROCESSING'"
                     command="RESOLVED"
                   >
                     标记已解决

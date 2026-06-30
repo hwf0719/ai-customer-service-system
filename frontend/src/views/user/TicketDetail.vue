@@ -15,14 +15,14 @@ const messagesContainer = ref(null)
 
 const statusLabel = {
   PENDING: '待处理',
-  IN_PROGRESS: '处理中',
+  PROCESSING: '处理中',
   RESOLVED: '已解决',
   CLOSED: '已关闭'
 }
 
 const statusType = {
   PENDING: 'warning',
-  IN_PROGRESS: 'primary',
+  PROCESSING: 'primary',
   RESOLVED: 'success',
   CLOSED: 'info'
 }

@@ -22,7 +22,6 @@ onMounted(() => {
 async function fetchDashboardData() {
   loading.value = true
   try {
-    // 获取用户的工单统计
     const data = await ticketApi.getList({ page: 1, pageSize: 100 })
     const tickets = data.records || []
 
@@ -31,7 +30,6 @@ async function fetchDashboardData() {
     stats.value.processing = tickets.filter(t => t.status === 'PROCESSING').length
     stats.value.resolved = tickets.filter(t => t.status === 'RESOLVED').length
 
-    // 最近的工单
     recentTickets.value = tickets.slice(0, 5)
   } catch (error) {
     console.error('获取数据失败:', error)
@@ -59,27 +57,20 @@ function formatTime(time) {
   return new Date(time).toLocaleString('zh-CN')
 }
 
-function handleCreateTicket() {
-  router.push('/user/tickets/create')
-}
-
 function handleViewTicket(id) {
-  router.push(`/user/tickets/${id}`)
+  router.push(`/agent/tickets/${id}`)
 }
 </script>
 
 <template>
-  <div class="user-dashboard" v-loading="loading">
+  <div class="agent-dashboard" v-loading="loading">
     <!-- 欢迎信息 -->
     <el-card shadow="never" class="welcome-card">
       <div class="welcome-content">
         <div>
-          <h2>欢迎回来，{{ userStore.userInfo?.nickname || userStore.userInfo?.username || '用户' }}</h2>
-          <p>在这里您可以提交问题、查看工单进度</p>
+          <h2>欢迎回来，{{ userStore.userInfo?.nickname || userStore.userInfo?.username || '客服' }}</h2>
+          <p>您有 {{ stats.processing }} 个工单正在处理中</p>
         </div>
-        <el-button type="primary" size="large" icon="EditPen" @click="handleCreateTicket">
-          提交新工单
-        </el-button>
       </div>
     </el-card>
 
@@ -93,7 +84,7 @@ function handleViewTicket(id) {
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ stats.total }}</div>
-              <div class="stat-label">全部工单</div>
+              <div class="stat-label">我的工单</div>
             </div>
           </div>
         </el-card>
@@ -144,7 +135,7 @@ function handleViewTicket(id) {
       <template #header>
         <div class="card-header">
           <span>最近工单</span>
-          <el-button text type="primary" @click="router.push('/user/tickets')">查看全部</el-button>
+          <el-button text type="primary" @click="router.push('/agent/tickets')">查看全部</el-button>
         </div>
       </template>
 
@@ -167,21 +158,19 @@ function handleViewTicket(id) {
         </el-table-column>
       </el-table>
 
-      <el-empty v-if="recentTickets.length === 0" description="暂无工单">
-        <el-button type="primary" @click="handleCreateTicket">提交第一个工单</el-button>
-      </el-empty>
+      <el-empty v-if="recentTickets.length === 0" description="暂无分配给您的工单" />
     </el-card>
   </div>
 </template>
 
 <style scoped>
-.user-dashboard {
+.agent-dashboard {
   padding: 0;
 }
 
 .welcome-card {
   margin-bottom: 20px;
-  background: linear-gradient(135deg, #409EFF 0%, #337ecc 100%);
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%);
 }
 
 .welcome-card :deep(.el-card__body) {

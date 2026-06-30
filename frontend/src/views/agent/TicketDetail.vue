@@ -8,8 +8,6 @@ const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const ticket = ref(null)
-const summary = ref('')
-const summaryLoading = ref(false)
 const messages = ref([])
 const messageContent = ref('')
 const messageLoading = ref(false)
@@ -48,13 +46,6 @@ const categoryLabel = {
   BILLING: '账单问题',
   GENERAL: '一般咨询',
   OTHER: '其他'
-}
-
-const categoryType = {
-  TECHNICAL: 'danger',
-  BILLING: 'warning',
-  GENERAL: 'info',
-  OTHER: ''
 }
 
 const sentimentLabel = {
@@ -104,27 +95,11 @@ async function handleUpdateStatus(status) {
   }
 }
 
-async function handleGetSummary() {
-  summaryLoading.value = true
-  try {
-    const data = await ticketApi.getSummary(ticket.value.id)
-    const summaryText = data || '暂无摘要'  // 直接使用返回的字符串
-    summary.value = summaryText
-    ticket.value.summary = summaryText  // 同时更新 ticket 对象
-  } catch (error) {
-    console.error('获取摘要失败:', error)
-    ElMessage.error('获取摘要失败')
-  } finally {
-    summaryLoading.value = false
-  }
-}
-
 async function fetchMessages() {
   try {
     const id = route.params.id
     const data = await ticketApi.getMessages(id)
     messages.value = data || []
-    // 滚动到底部
     await nextTick()
     scrollToBottom()
   } catch (error) {
@@ -132,7 +107,7 @@ async function fetchMessages() {
   }
 }
 
-async function handleSendMessage(senderType = 'USER') {
+async function handleSendMessage() {
   if (!messageContent.value.trim()) {
     ElMessage.warning('请输入消息内容')
     return
@@ -141,7 +116,7 @@ async function handleSendMessage(senderType = 'USER') {
   messageLoading.value = true
   try {
     const id = route.params.id
-    await ticketApi.sendMessage(id, messageContent.value.trim(), senderType)
+    await ticketApi.sendMessage(id, messageContent.value.trim(), 'AGENT')
     messageContent.value = ''
     ElMessage.success('发送成功')
     await fetchMessages()
@@ -162,8 +137,7 @@ function scrollToBottom() {
 function handleKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
-    // 管理端发送消息默认是 AGENT 类型
-    handleSendMessage('AGENT')
+    handleSendMessage()
   }
 }
 
@@ -181,7 +155,7 @@ function handleBack() {
   <div class="ticket-detail" v-loading="loading">
     <div class="page-header">
       <el-button icon="ArrowLeft" @click="handleBack">返回</el-button>
-      <h2>工单详情</h2>
+      <h2>工单处理</h2>
     </div>
 
     <template v-if="ticket">
@@ -236,7 +210,7 @@ function handleBack() {
                 </el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="分类">
-                <el-tag :type="ticket.category ? categoryType[ticket.category] || 'info' : 'info'">
+                <el-tag :type="ticket.category ? 'info' : 'info'">
                   {{ ticket.category ? categoryLabel[ticket.category] || ticket.category : '未分类' }}
                 </el-tag>
               </el-descriptions-item>
@@ -245,7 +219,7 @@ function handleBack() {
                   {{ ticket.sentiment ? sentimentLabel[ticket.sentiment] || '未知' : '未知' }}
                 </el-tag>
               </el-descriptions-item>
-              <el-descriptions-item label="创建时间" :span="2">
+              <el-descriptions-item label="创建时间">
                 {{ formatTime(ticket.createTime) }}
               </el-descriptions-item>
               <el-descriptions-item label="标题" :span="2">
@@ -277,15 +251,16 @@ function handleBack() {
                 class="message-item"
                 :class="{
                   'message-ai': msg.senderType === 'AI',
-                  'message-user': msg.senderType === 'USER'
+                  'message-user': msg.senderType === 'USER',
+                  'message-system': msg.senderType === 'SYSTEM'
                 }"
               >
                 <div class="message-header">
                   <el-tag
-                    :type="msg.senderType === 'AI' ? 'primary' : msg.senderType === 'USER' ? 'success' : 'warning'"
+                    :type="msg.senderType === 'AI' ? 'primary' : msg.senderType === 'USER' ? 'success' : msg.senderType === 'SYSTEM' ? 'info' : 'warning'"
                     size="small"
                   >
-                    {{ msg.senderType === 'AI' ? 'AI 助手' : msg.senderType === 'USER' ? '用户' : '客服' }}
+                    {{ msg.senderType === 'AI' ? '🤖 AI 助手' : msg.senderType === 'USER' ? '用户' : msg.senderType === 'SYSTEM' ? '系统' : '客服' }}
                   </el-tag>
                   <span class="message-time">{{ formatTime(msg.createTime) }}</span>
                 </div>
@@ -307,7 +282,7 @@ function handleBack() {
               <el-button
                 type="primary"
                 :loading="messageLoading"
-                @click="handleSendMessage('AGENT')"
+                @click="handleSendMessage"
                 class="send-btn"
               >
                 发送
@@ -318,32 +293,6 @@ function handleBack() {
 
         <!-- 侧边栏 -->
         <el-col :span="8">
-          <!-- AI 摘要 -->
-          <el-card shadow="never" class="summary-card">
-            <template #header>
-              <div class="card-header">
-                <span>AI 摘要</span>
-                <el-button
-                  type="primary"
-                  size="small"
-                  :loading="summaryLoading"
-                  @click="handleGetSummary"
-                >
-                  生成摘要
-                </el-button>
-              </div>
-            </template>
-            <div v-if="ticket.summary" class="summary-content">
-              <div class="ai-badge">🤖 AI 生成</div>
-              {{ ticket.summary }}
-            </div>
-            <div v-else-if="summary" class="summary-content">
-              <div class="ai-badge">🤖 AI 生成</div>
-              {{ summary }}
-            </div>
-            <el-empty v-else description="点击按钮生成 AI 摘要" :image-size="60" />
-          </el-card>
-
           <!-- 工单状态流转 -->
           <el-card shadow="never" class="timeline-card">
             <template #header>
@@ -414,6 +363,8 @@ function handleBack() {
 }
 
 .messages-list {
+  max-height: 400px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -427,6 +378,13 @@ function handleBack() {
 
 .message-item.message-ai {
   background: #ecf5ff;
+}
+
+.message-item.message-system {
+  background: #f0f0f0;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
 }
 
 .message-header {
@@ -447,34 +405,8 @@ function handleBack() {
   color: #333;
 }
 
-.summary-card {
-  margin-bottom: 20px;
-}
-
-.summary-content {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #333;
-  white-space: pre-wrap;
-}
-
-.ai-badge {
-  display: inline-block;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  margin-bottom: 8px;
-}
-
 .timeline-card {
   margin-bottom: 20px;
-}
-
-.messages-list {
-  max-height: 400px;
-  overflow-y: auto;
 }
 
 .message-input {
